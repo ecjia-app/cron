@@ -61,7 +61,7 @@ class CronAdminMenuService
      */
 	public function handle(& $options)
     {
-        $menus = ecjia_admin::make_admin_menu('03_content', __('计划任务'), '', 3);
+        $menus = ecjia_admin::make_admin_menu('03_content', __('计划任务'), '', 103);
 
         $submenus = array(
             ecjia_admin::make_admin_menu('31_cron_list', __('任务列表', 'cron'), RC_Uri::url('cron/admin_plugin/init'), 31)->add_purview('cron_manage'),
