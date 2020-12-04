@@ -46,19 +46,15 @@
 //
 namespace Ecjia\App\Cron\Services;
 
-use DateTime;
+use Ecjia\App\Cron\Installer\PluginInstaller;
 use ecjia_admin;
-use ecjia_config;
 use ecjia_plugin;
-use RC_DB;
-use RC_Plugin;
-use RC_Time;
 
 /**
  * 计划任务安装API
  * @author royalwang
  */
-class PluginInstallService
+class CronPluginInstallService
 {
     /**
      * @param $options
@@ -67,103 +63,21 @@ class PluginInstallService
      */
 	public function handle(& $options)
     {
-		if (isset($options['file'])) {
-			$plugin_file = $options['file'];
-			$plugin_data = RC_Plugin::get_plugin_data($plugin_file);
-			 
-			$plugin_file = RC_Plugin::plugin_basename($plugin_file);
-			$plugin_dir = dirname($plugin_file);
-			 
-			$plugins = ecjia_config::instance()->get_addon_config('cron_plugins', true);
-			$plugins[$plugin_dir] = $plugin_file;
-			 
-			ecjia_config::instance()->set_addon_config('cron_plugins', $plugins, true);
-		}
-		
-		if (isset($options['config']) && !empty($plugin_data['Name'])) {
+        if (!(isset($options['file']) && isset($options['config']))) {
+            return ecjia_plugin::add_error('plugin_install_error', __('插件安装卸载必要参数不全', 'cron'));
+        }
 
+        $installer = new PluginInstaller($options['file'], $options['config']);
 
-			$format_name = $plugin_data['Name'];
-			$format_description = $plugin_data['Description'];
-			
-			/* 检查输入 */
-			if (empty($format_name) || empty($options['config']['cron_code'])) {
-				return ecjia_plugin::add_error('plugin_install_error', __('计划任务插件名称不能为空', 'cron'));
-			}
+        $result = $installer->install();
 
-			/* 检测名称重复 */
-			$name_count = RC_DB::table('crons')->where('cron_name', $format_name)->where('cron_code', $options['config']['cron_code'])->count();
-			if ($name_count > 0) {
-				return ecjia_plugin::add_error('plugin_install_error', __('安装的插件已存在', 'cron'));
-			}
-			
-			/* 取得配置信息 */
-			$cron_config = serialize($options['config']['forms']);
-			$cron_config_file = $options['config'];
+        if (is_ecjia_error($result)) {
+            return $result;
+        }
 
-            $cron_expression  = array_get($cron_config_file['default_time'], 'cron_expression', '');
-            $expression_alias = array_get($cron_config_file['default_time'], 'expression_alias', '');
-			
-			//判断是否有默认执行时间配置
-			if (array_get($cron_config_file, 'lock_time', false)) {
-			    $file_list = with(new \Ecjia\App\Cron\CronExpression)->getProvidesMultipleRunDates($cron_expression);
-			    foreach ($file_list as $key => $value) {
-			    	$file_list[$key] = (array)$value;
-			    }
-			    foreach ($file_list as $key => $value) {
-			    	$mydate = new DateTime($value['date']);
-			    	$new_date = $mydate->format('Y-m-d H:i:s');
-			    	$file_list[$key]['new_date'] = $new_date;
-			    }
-			    $nexttime = RC_Time::local_strtotime($file_list[0]['new_date']);
-			} else {
-			    $nexttime = 0;
-			}
-			
-			/* 执行后关闭 */
-			$cron_run_once = 0;
-			
-			$allow_ip    = '';
-		
-			/* 安装，检查该支付方式是否曾经安装过 */
-			$count = RC_DB::connection('ecjia')->table('crons')->where('cron_code', $options['config']['cron_code'])->count();
-			
-			if ($count > 0) {
-				/* 该支付方式已经安装过, 将该支付方式的状态设置为 enable */
-				$data = array(
-					'cron_name' 		=> $format_name,
-					'cron_desc'     	=> $format_description,
-					'cron_config' 		=> $cron_config,
-					'cron_expression' 	=> $cron_expression,	
-					'expression_alias' 	=> $expression_alias,
-				    'nexttime' 			=> $nexttime,
-				    'run_once' 			=> $cron_run_once,
-				    'allow_ip' 			=> $allow_ip,
-					'enabled' 			=> 1
-				);
-				RC_DB::connection('ecjia')->table('crons')->where('cron_code', $options['config']['cron_code'])->update($data);
-				
-			} else {
-				/* 该支付方式没有安装过, 将该支付方式的信息添加到数据库 */
-				$data = array(
-					'cron_code' 		=> $options['config']['cron_code'],
-					'cron_name' 		=> $format_name,
-					'cron_desc' 		=> $format_description,
-					'cron_config' 		=> $cron_config,
-					'cron_expression' 	=> $cron_expression,
-					'expression_alias' 	=> $expression_alias,
-				    'nexttime' 		    => $nexttime,
-				    'run_once' 		    => $cron_run_once,
-				    'allow_ip' 		    => $allow_ip,
-					'enabled' 		    => 1,
-				);
-				RC_DB::connection('ecjia')->table('crons')->insert($data);
-			}
-			
-			/* 记录日志 */
-			ecjia_admin::admin_log($format_name, 'install', 'cron');
-			return true;
-		}
+        /* 记录日志 */
+        ecjia_admin::admin_log($installer->getConfigByKey('cron_code'), 'install', 'cron');
+        return true;
 	}
 }
 
