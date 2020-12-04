@@ -60,17 +60,13 @@ use RC_Uri;
  * ECJIA计划任务设置模块
  * @author songqianqian
  */
-class AdminConfigController extends ecjia_admin
+class AdminConfigController extends AdminBase
 {
-
-    private $__FILE__;
 
 	public function __construct()
     {
 		parent::__construct();
 
-        $this->__FILE__ = dirname(dirname(__FILE__));
-		
 		RC_Script::enqueue_script('jquery-validate');
 		RC_Script::enqueue_script('jquery-form');
 		RC_Script::enqueue_script('smoke');

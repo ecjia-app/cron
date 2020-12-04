@@ -47,9 +47,14 @@
 namespace Ecjia\App\Cron\Controllers;
 
 use admin_nav_here;
+use admin_notice;
 use ecjia;
+use Ecjia\App\Cron\Installer\PluginUninstaller;
+use Ecjia\Component\Plugin\Storages\CronPluginStorage;
+use Ecjia\System\Frameworks\BrowserEvent\SwitchClickEvent;
 use ecjia_admin;
 use ecjia_screen;
+use RC_Api;
 use RC_App;
 use RC_DB;
 use RC_Package;
@@ -62,16 +67,13 @@ use RC_Uri;
  * ECJia 计划任务
  * @author songqianqian
  */
-class AdminPluginController extends ecjia_admin
+class AdminPluginController extends AdminBase
 {
     private $cron_method;
-    private $__FILE__;
 
     public function __construct()
     {
         parent::__construct();
-
-        $this->__FILE__ = dirname(dirname(__FILE__));
 
         $this->cron_method = RC_Package::package('app::cron')->loadClass('cron_method');
         RC_Package::package('app::cron')->loadClass('cron_helper');
@@ -105,86 +107,116 @@ class AdminPluginController extends ecjia_admin
     //列表页
     public function init()
     {
-        $this->admin_priv('cron_manage');
+        try {
+            $this->admin_priv('cron_manage');
 
-        ecjia_screen::get_current_screen()->remove_last_nav_here();
-        ecjia_screen::get_current_screen()->add_nav_here(new admin_nav_here(__('计划任务', 'cron')));
-        $this->assign('ur_here', __('计划任务', 'cron'));
+            ecjia_screen::get_current_screen()->remove_last_nav_here();
+            ecjia_screen::get_current_screen()->add_nav_here(new admin_nav_here(__('计划任务', 'cron')));
+            $this->assign('ur_here', __('计划任务', 'cron'));
 
-        $this->assign('action_link', array('text' => __('计划任务配置', 'cron'), 'href' => RC_Uri::url('cron/admin_config/init')));
+            $this->assign('action_link', array('text' => __('计划任务配置', 'cron'), 'href' => RC_Uri::url('cron/admin_config/init')));
 
-        $db_cron       = RC_DB::connection('ecjia')->table('crons');
-        $count['type'] = isset($_GET['type']) ? $_GET['type'] : '';
-        if (!empty($count['type'])) {
-            $db_cron->where('enabled', 0);
-        } else {
-            $db_cron->where('enabled', 1);
-        }
-        $data              = $db_cron->get();
-        $filter_count      = RC_DB::connection('ecjia')->table('crons')->select(RC_DB::raw('SUM(IF(enabled = 1, 1, 0)) as enabled'), RC_DB::raw('SUM(IF(enabled =0 , 1, 0)) as disabled'))->first();
-        $count['enabled']  = $filter_count['enabled'] > 0 ? $filter_count['enabled'] : 0;
-        $count['disabled'] = $filter_count['disabled'] > 0 ? $filter_count['disabled'] : 0;
-
-        $this->assign('count', $count);
-        $data or $data = array();
-        $modules = array();
-        if (isset($data)) {
-            foreach ($data as $_key => $_value) {
-                $modules[$_key]['code']       = $_value['cron_code'];
-                $modules[$_key]['name']       = $_value['cron_name'];
-                $modules[$_key]['desc']       = $_value['cron_desc'];
-                $modules[$_key]['cron_order'] = $_value['cron_order'];
-                $modules[$_key]['nexttime']   = RC_Time::local_date('Y-m-d H:i:s', $_value['nexttime']);
-                $modules[$_key]['runtime']    = $_value['runtime'] ? RC_Time::local_date('Y-m-d H:i:s', $_value['runtime']) : '-';
-                $modules[$_key]['enabled']    = $_value['enabled'];
-                $modules[$_key]['install']    = '1';
+            $db_cron       = RC_DB::connection('ecjia')->table('crons');
+            $count['type'] = isset($_GET['type']) ? $_GET['type'] : '';
+            if (!empty($count['type'])) {
+                $db_cron->where('enabled', 0);
+            } else {
+                $db_cron->where('enabled', 1);
             }
-        } else {
-            $modules[$_key]['install'] = '0';
-        }
-        $this->assign('modules', $modules);
+            $data              = $db_cron->get();
+            $filter_count      = RC_DB::connection('ecjia')->table('crons')->select(RC_DB::raw('SUM(IF(enabled = 1, 1, 0)) as enabled'), RC_DB::raw('SUM(IF(enabled =0 , 1, 0)) as disabled'))->first();
+            $count['enabled']  = $filter_count['enabled'] > 0 ? $filter_count['enabled'] : 0;
+            $count['disabled'] = $filter_count['disabled'] > 0 ? $filter_count['disabled'] : 0;
 
-        return $this->display('cron_list.dwt');
+            $this->assign('count', $count);
+            $data or $data = array();
+            $modules = array();
+            if (isset($data)) {
+                foreach ($data as $_key => $_value) {
+                    $modules[$_key]['code']       = $_value['cron_code'];
+                    $modules[$_key]['name']       = $_value['cron_name'];
+                    $modules[$_key]['desc']       = $_value['cron_desc'];
+                    $modules[$_key]['cron_order'] = $_value['cron_order'];
+                    $modules[$_key]['nexttime']   = RC_Time::local_date('Y-m-d H:i:s', $_value['nexttime']);
+                    $modules[$_key]['runtime']    = $_value['runtime'] ? RC_Time::local_date('Y-m-d H:i:s', $_value['runtime']) : '-';
+                    $modules[$_key]['enabled']    = $_value['enabled'];
+                    $modules[$_key]['install']    = '1';
+                }
+            }
+
+            $this->assign('modules', $modules);
+
+            return $this->display('cron_list.dwt');
+        } catch (\Exception $exception) {
+            return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_HTML | ecjia::MSGSTAT_ERROR);
+        }
     }
 
 
     public function edit()
     {
-        $this->admin_priv('cron_update');
+        try {
+            $this->admin_priv('cron_update');
 
-        ecjia_screen::get_current_screen()->add_nav_here(new admin_nav_here(__('编辑计划任务', 'cron')));
-        $this->assign('ur_here', __('编辑计划任务', 'cron'));
+            ecjia_screen::get_current_screen()->add_nav_here(new admin_nav_here(__('编辑计划任务', 'cron')));
+            $this->assign('ur_here', __('编辑计划任务', 'cron'));
 
-        $this->assign('action_link', array('text' => __('计划任务', 'cron'), 'href' => RC_Uri::url('cron/admin_plugin/init')));
+            $this->assign('action_link', array('text' => __('计划任务', 'cron'), 'href' => RC_Uri::url('cron/admin_plugin/init')));
 
-        //获取插件信息
-        $code = trim($_GET['code']);
-        $cron = RC_DB::table('crons')->where('cron_code', $code)->first();
+            //获取插件信息
+            $code = trim($_GET['code']);
+            $cron = RC_DB::table('crons')->where('cron_code', $code)->first();
 
-
-        $cron_config = unserialize($cron['cron_config']);
-
-        /* 取出已经设置属性的code */
-        $code_list = array();
-        if (!empty($cron_config)) {
-            foreach ($cron_config as $key => $value) {
-                $code_list[$value['name']] = $value['value'];
+            if ($cron['enabled'] != 1) {
+                $gourl = RC_Uri::url("cron/admin_plugin/enabled", [
+                    'code' => $cron['pay_code'],
+                    'from' => 'edit',
+                ]);
+                $msg = sprintf(__('<strong>温馨提示：</strong>该计划任务插件已经禁用，如果您需要使用，
+                    请点击<a class="switch" href="javascript:;" data-url="{%s}" title="启用">启用</a>。', 'cron'), $gourl);
+                ecjia_screen::get_current_screen()->add_admin_notice(new admin_notice($msg, 'alert-error'));
             }
+
+            $cron_config = unserialize($cron['cron_config']);
+
+            try {
+                /* 取出已经设置属性的code */
+                $code_list = array();
+                if (!empty($cron_config)) {
+                    foreach ($cron_config as $key => $value) {
+                        $code_list[$value['name']] = $value['value'];
+                    }
+                }
+                $cron_handle         = with(new \Ecjia\App\Cron\CronPlugin)->channel($code);
+                $cron_config = $cron_handle->makeFormData($code_list);
+                $cron_config_file    = $cron_handle->loadConfig();
+                //获取配置时间
+                $config_list = with(new \Ecjia\App\Cron\CronExpression)->getExpressions();
+            }
+            catch (\InvalidArgumentException $exception) {
+                $gourl = RC_Uri::url("cron/admin_plugin/delete", [
+                    'code' => $cron['pay_code'],
+                    'from' => 'edit',
+                ]);
+                $msg = sprintf(__('<strong>温馨提示：</strong>该计划任务的插件已经丢失，请确认插件文件已经放入"/content/plugins/"下，
+                如需继续，请点击<a class="switch" href="javascript:;" data-url="%s">删除</a>，然后重新安装该插件。', 'cron'), $gourl);
+                ecjia_screen::get_current_screen()->add_admin_notice(new admin_notice($msg, 'alert-error'));
+            }
+
+            $cron['cron_config'] = $cron_config;
+
+            $cron['run_once'] && $cron['autoclose'] = 'checked';
+
+            $this->assign('cron_config_file', $cron_config_file);
+            $this->assign('config_list', $config_list);
+            $this->assign('cron', $cron);
+
+            $this->assign('inline_script', (new SwitchClickEvent())());
+
+            return $this->display('cron_edit.dwt');
+        } catch (\Exception $exception) {
+            return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_HTML | ecjia::MSGSTAT_ERROR);
         }
-        $cron_handle         = with(new \Ecjia\App\Cron\CronPlugin)->channel($code);
-        $cron['cron_config'] = $cron_handle->makeFormData($code_list);
-        $cron_config_file    = $cron_handle->loadConfig();
-        $this->assign('cron_config_file', $cron_config_file);
-
-        $cron['run_once'] && $cron['autoclose'] = 'checked';
-
-        //获取配置时间
-        $config_list = with(new \Ecjia\App\Cron\CronExpression)->getExpressions();
-        $this->assign('config_list', $config_list);
-
-        $this->assign('cron', $cron);
-
-        return $this->display('cron_edit.dwt');
     }
 
     //时间设置返回相对应的公式
@@ -351,6 +383,20 @@ class AdminPluginController extends ecjia_admin
         } catch (\Exception $exception) {
             return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
         }
+    }
+
+    /**
+     * 删除插件配置
+     */
+    public function delete()
+    {
+        $code = $this->request->input('code');
+
+        $result = RC_Api::api('system', 'ecjia_deactivate_plugin', ['code' => $code]);
+
+        (new PluginUninstaller($code, new CronPluginStorage()))->uninstall();
+
+        return $this->showmessage(__('删除成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_plugin/init')));
     }
 
     /**
