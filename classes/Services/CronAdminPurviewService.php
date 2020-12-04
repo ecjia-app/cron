@@ -50,7 +50,7 @@ namespace Ecjia\App\Cron\Services;
  * 后台权限API
  * @author wutifang
  */
-class AdminPurviewService
+class CronAdminPurviewService
 {
     /**
      * @param $options

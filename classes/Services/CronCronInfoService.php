@@ -53,7 +53,7 @@ use RC_DB;
  * 计划任务信息
  * @author wutifang
  */
-class CronInfoService
+class CronCronInfoService
 {
 	
     /**

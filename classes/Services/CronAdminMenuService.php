@@ -53,7 +53,7 @@ use RC_Uri;
  * 后台菜单API
  * @author royalwang
  */
-class AdminMenuService
+class CronAdminMenuService
 {
     /**
      * @param $options

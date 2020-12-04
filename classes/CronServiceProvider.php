@@ -43,12 +43,12 @@ class CronServiceProvider extends  AppParentServiceProvider
 
     protected function registerAppService()
     {
-        RC_Service::addService('admin_purview', 'cron', 'Ecjia\App\Cron\Services\AdminPurviewService');
-        RC_Service::addService('cron_info', 'cron', 'Ecjia\App\Cron\Services\CronInfoService');
-        RC_Service::addService('plugin_install', 'cron', 'Ecjia\App\Cron\Services\PluginInstallService');
-        RC_Service::addService('plugin_menu', 'cron', 'Ecjia\App\Cron\Services\PluginMenuService');
-        RC_Service::addService('plugin_uninstall', 'cron', 'Ecjia\App\Cron\Services\PluginUninstallService');
-        RC_Service::addService('admin_menu', 'cron', 'Ecjia\App\Cron\Services\AdminMenuService');
+        RC_Service::addService('admin_purview', 'cron', 'Ecjia\App\Cron\Services\CronAdminPurviewService');
+        RC_Service::addService('cron_info', 'cron', 'Ecjia\App\Cron\Services\CronCronInfoService');
+        RC_Service::addService('plugin_install', 'cron', 'Ecjia\App\Cron\Services\CronPluginInstallService');
+        RC_Service::addService('plugin_menu', 'cron', 'Ecjia\App\Cron\Services\CronPluginMenuService');
+        RC_Service::addService('plugin_uninstall', 'cron', 'Ecjia\App\Cron\Services\CronPluginUninstallService');
+        RC_Service::addService('admin_menu', 'cron', 'Ecjia\App\Cron\Services\CronAdminMenuService');
     }
 
     /**

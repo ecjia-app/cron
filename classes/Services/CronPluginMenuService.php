@@ -53,7 +53,7 @@ use RC_Uri;
  * 计划任务插件菜单--插件配置
  * @author songqianqian
  */
-class PluginMenuService
+class CronPluginMenuService
 {
     /**
      * @param $options
