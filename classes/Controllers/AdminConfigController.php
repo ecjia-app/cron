@@ -114,12 +114,16 @@ class AdminConfigController extends ecjia_admin
 	 */
 	public function update()
     {
-		$this->admin_priv('cron_config_manage');
-		
-		$cron_method = $_POST['cron_method'];
-		ecjia_config::write('cron_method', $cron_method);
-		
-		return $this->showmessage(__('计划任务配置成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_config/init')));
+        try {
+            $this->admin_priv('cron_config_manage');
+
+            $cron_method = $_POST['cron_method'];
+            ecjia_config::write('cron_method', $cron_method);
+
+            return $this->showmessage(__('计划任务配置成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_config/init')));
+        } catch (\Exception $exception) {
+            return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
+        }
 	}
 	
 
@@ -128,12 +132,16 @@ class AdminConfigController extends ecjia_admin
 	 */
 	public function update_key()
     {
-		$this->admin_priv('cron_config_manage');
-		
-		$cron_secret_key = with(new \Ecjia\App\Cron\CronRun)->keygen();
-		ecjia_config::instance()->write_config('cron_secret_key', $cron_secret_key);
-	
-		return $this->showmessage(__('操作成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_config/init')));
+        try {
+            $this->admin_priv('cron_config_manage');
+
+            $cron_secret_key = with(new \Ecjia\App\Cron\CronRun)->keygen();
+            ecjia_config::instance()->write_config('cron_secret_key', $cron_secret_key);
+
+            return $this->showmessage(__('操作成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_config/init')));
+        } catch (\Exception $exception) {
+            return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
+        }
 	}
 }
 
