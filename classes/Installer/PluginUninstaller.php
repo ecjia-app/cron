@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Ecjia\App\Payment\Installer;
+namespace Ecjia\App\Cron\Installer;
 
 
 use RC_DB;
@@ -12,7 +12,7 @@ class PluginUninstaller extends \Ecjia\Component\Plugin\Installer\PluginUninstal
     public function uninstallByCode($code)
     {
         /* 从数据库中删除支付方式 */
-        RC_DB::connection(config('cashier.database_connection', 'default'))->table('payment')->where('pay_code', $code)->delete();
+        RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->delete();
     }
 
 }

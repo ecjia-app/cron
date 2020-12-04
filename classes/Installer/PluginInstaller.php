@@ -1,11 +1,13 @@
 <?php
 
-namespace Ecjia\App\Payment\Installer;
+namespace Ecjia\App\Cron\Installer;
 
-use Ecjia\Component\Plugin\Storages\PaymentPluginStorage;
+use DateTime;
+use Ecjia\Component\Plugin\Storages\CronPluginStorage;
 use ecjia_plugin;
 use RC_DB;
 use RC_Plugin;
+use RC_Time;
 
 class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
 {
@@ -17,13 +19,13 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
     {
         $plugin_file = RC_Plugin::plugin_basename( $this->plugin_file );
 
-        (new PaymentPluginStorage())->addPlugin($plugin_file);
+        (new CronPluginStorage())->addPlugin($plugin_file);
 
-        $code = $this->getConfigByKey('pay_code');
+        $code = $this->getConfigByKey('cron_code');
 
         /* 检查输入 */
         if (empty($code)) {
-            return ecjia_plugin::add_error('plugin_install_error', __('支付方式CODE不能为空', 'payment'));
+            return ecjia_plugin::add_error('plugin_install_error', __('计划任务插件CODE不能为空', 'cron'));
         }
 
         $this->installByCode($code);
@@ -40,39 +42,68 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
         $format_description = $this->getPluginDataByKey('Description');
 
         /* 取得配置信息 */
-        $pay_config = serialize($this->getConfigByKey('forms'));
+        $cron_config = serialize($this->getConfigByKey('forms'));
+        $default_time = $this->getConfigByKey('default_time', []);
+        $lock_time = $this->getConfigByKey('lock_time', false);
 
-        /* 取得和验证支付手续费 */
-        $pay_fee = $this->getConfigByKey('pay_fee', 0);
+        $cron_expression  = array_get($default_time, 'cron_expression', '');
+        $expression_alias = array_get($default_time, 'expression_alias', '');
+
+        //判断是否有默认执行时间配置
+        if ($lock_time) {
+            $file_list = with(new \Ecjia\App\Cron\CronExpression)->getProvidesMultipleRunDates($cron_expression);
+            foreach ($file_list as $key => $value) {
+                $file_list[$key] = (array)$value;
+            }
+            foreach ($file_list as $key => $value) {
+                $mydate = new DateTime($value['date']);
+                $new_date = $mydate->format('Y-m-d H:i:s');
+                $file_list[$key]['new_date'] = $new_date;
+            }
+            $nexttime = RC_Time::local_strtotime($file_list[0]['new_date']);
+        } else {
+            $nexttime = 0;
+        }
+
+        /* 执行后关闭 */
+        $cron_run_once = 0;
+        $allow_ip    = '';
+
 
         /* 安装，检查该支付方式是否曾经安装过 */
-        $count = RC_DB::connection(config('cashier.database_connection', 'default'))->table('payment')->where('pay_code', $code)->count();
+        $count = RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->count();
 
         if ($count > 0) {
-            /* 该支付方式已经安装过, 将该支付方式的状态设置为 enable */
+            /* 该插件已经安装过, 将该插件的状态设置为 enable */
             $data = array(
-                'pay_name'   => $format_name,
-                'pay_desc'   => $format_description,
-                'pay_config' => $pay_config,
-                'pay_fee'    => $pay_fee,
-                'enabled'    => 1
+                'cron_name' 		=> $format_name,
+                'cron_desc'     	=> $format_description,
+                'cron_config' 		=> $cron_config,
+                'cron_expression' 	=> $cron_expression,
+                'expression_alias' 	=> $expression_alias,
+                'nexttime' 			=> $nexttime,
+                'run_once' 			=> $cron_run_once,
+                'allow_ip' 			=> $allow_ip,
+                'enabled' 			=> 1
             );
 
-            RC_DB::connection(config('cashier.database_connection', 'default'))->table('payment')->where('pay_code', $code)->update($data);
+            RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->update($data);
         }
         else {
-            /* 该支付方式没有安装过, 将该支付方式的信息添加到数据库 */
+            /* 该插件没有安装过, 将该插件的信息添加到数据库 */
             $data = array(
-                'pay_code'   => $code,
-                'pay_name'   => $format_name,
-                'pay_desc'   => $format_description,
-                'pay_config' => $pay_config,
-                'pay_fee'    => $pay_fee,
-                'enabled'    => 1,
-                'is_online'  => $this->getConfigByKey('is_online'),
-                'is_cod'     => $this->getConfigByKey('is_cod'),
+                'cron_code' 		=> $code,
+                'cron_name' 		=> $format_name,
+                'cron_desc' 		=> $format_description,
+                'cron_config' 		=> $cron_config,
+                'cron_expression' 	=> $cron_expression,
+                'expression_alias' 	=> $expression_alias,
+                'nexttime' 		    => $nexttime,
+                'run_once' 		    => $cron_run_once,
+                'allow_ip' 		    => $allow_ip,
+                'enabled' 		    => 1,
             );
-            RC_DB::connection(config('cashier.database_connection', 'default'))->table('payment')->insert($data);
+            RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->insert($data);
         }
     }
 
@@ -81,14 +112,14 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
      */
     public function uninstall()
     {
-        $code = $this->getConfigByKey('pay_code');
+        $code = $this->getConfigByKey('cron_code');
 
         /* 检查输入 */
         if (empty($code)) {
-            return ecjia_plugin::add_error('plugin_uninstall_error', __('支付方式CODE不能为空', 'payment'));
+            return ecjia_plugin::add_error('plugin_uninstall_error', __('计划任务插件CODE不能为空', 'cron'));
         }
 
-        (new PluginUninstaller($code, new PaymentPluginStorage()))->uninstall();
+        (new PluginUninstaller($code, new CronPluginStorage()))->uninstall();
 
         return true;
     }
