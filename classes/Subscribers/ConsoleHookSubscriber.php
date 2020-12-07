@@ -24,7 +24,7 @@ class ConsoleHookSubscriber
         }
 
         // Log only error jobs to database
-        RC_Cron::setLogOnlyErrorJobsToDatabase(true);
+//        RC_Cron::setLogOnlyErrorJobsToDatabase(true);
         // Add a cron job
         (new CronJobManager())->addCronJobs();
     }
