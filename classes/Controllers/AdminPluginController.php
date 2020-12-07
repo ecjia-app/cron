@@ -169,7 +169,7 @@ class AdminPluginController extends AdminBase
 
             if ($cron['enabled'] != 1) {
                 $gourl = RC_Uri::url("cron/admin_plugin/enabled", [
-                    'code' => $cron['pay_code'],
+                    'code' => $code,
                     'from' => 'edit',
                 ]);
                 $msg = sprintf(__('<strong>温馨提示：</strong>该计划任务插件已经禁用，如果您需要使用，
@@ -195,7 +195,7 @@ class AdminPluginController extends AdminBase
             }
             catch (\InvalidArgumentException $exception) {
                 $gourl = RC_Uri::url("cron/admin_plugin/delete", [
-                    'code' => $cron['pay_code'],
+                    'code' => $code,
                     'from' => 'edit',
                 ]);
                 $msg = sprintf(__('<strong>温馨提示：</strong>该计划任务的插件已经丢失，请确认插件文件已经放入"/content/plugins/"下，
@@ -390,13 +390,20 @@ class AdminPluginController extends AdminBase
      */
     public function delete()
     {
-        $code = $this->request->input('code');
+        try {
+            $code = $this->request->input('code');
 
-        $result = RC_Api::api('system', 'ecjia_deactivate_plugin', ['code' => $code]);
+            $result = RC_Api::api('system', 'ecjia_deactivate_plugin', ['code' => $code]);
+            if (is_ecjia_error($result)) {
+                return $this->showmessage($result->get_error_message(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
+            }
 
-        (new PluginUninstaller($code, new CronPluginStorage()))->uninstall();
+            (new PluginUninstaller($code, new CronPluginStorage()))->uninstall();
 
-        return $this->showmessage(__('删除成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_plugin/init')));
+            return $this->showmessage(__('删除成功', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('pjaxurl' => RC_Uri::url('cron/admin_plugin/init')));
+        } catch (\Exception $exception) {
+            return $this->showmessage($exception->getMessage(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
+        }
     }
 
     /**
