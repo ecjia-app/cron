@@ -11,7 +11,6 @@ use Royalcms\Component\Hook\Dispatcher;
 class ConsoleHookSubscriber
 {
 
-
     /**
      * Register the listeners for the subscriber.
      *
