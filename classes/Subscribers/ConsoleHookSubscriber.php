@@ -4,7 +4,7 @@
 namespace Ecjia\App\Cron\Subscribers;
 
 
-use Ecjia\App\Cron\CronRun;
+use Ecjia\App\Cron\CronJobManager;
 use RC_Cron;
 use Royalcms\Component\Hook\Dispatcher;
 
@@ -27,7 +27,7 @@ class ConsoleHookSubscriber
         // Log only error jobs to database
         RC_Cron::setLogOnlyErrorJobsToDatabase(true);
         // Add a cron job
-        (new CronRun())->addCronJobs();
+        (new CronJobManager())->addCronJobs();
     }
 
 }
