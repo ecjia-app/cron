@@ -94,7 +94,7 @@ class CronPlugin extends PluginModel
      */
     public function __construct(array $attributes = [])
     {
-        $this->connection = config('cashier.database_connection', 'default');
+        $this->connection = 'ecjia';
 
         parent::__construct($attributes);
     }

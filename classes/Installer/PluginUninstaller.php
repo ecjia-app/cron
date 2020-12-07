@@ -12,7 +12,7 @@ class PluginUninstaller extends \Ecjia\Component\Plugin\Installer\PluginUninstal
     public function uninstallByCode($code)
     {
         /* 从数据库中删除支付方式 */
-        RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->delete();
+        RC_DB::connection('ecjia')->table('crons')->where('cron_code', $code)->delete();
     }
 
 }

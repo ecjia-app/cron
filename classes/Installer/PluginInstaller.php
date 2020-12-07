@@ -71,7 +71,7 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
 
 
         /* 安装，检查该支付方式是否曾经安装过 */
-        $count = RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->count();
+        $count = RC_DB::connection('ecjia')->table('crons')->where('cron_code', $code)->count();
 
         if ($count > 0) {
             /* 该插件已经安装过, 将该插件的状态设置为 enable */
@@ -87,7 +87,7 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
                 'enabled' 			=> 1
             );
 
-            RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->where('cron_code', $code)->update($data);
+            RC_DB::connection('ecjia')->table('crons')->where('cron_code', $code)->update($data);
         }
         else {
             /* 该插件没有安装过, 将该插件的信息添加到数据库 */
@@ -103,7 +103,7 @@ class PluginInstaller extends \Ecjia\Component\Plugin\Installer\PluginInstaller
                 'allow_ip' 		    => $allow_ip,
                 'enabled' 		    => 1,
             );
-            RC_DB::connection(config('cashier.database_connection', 'default'))->table('crons')->insert($data);
+            RC_DB::connection('ecjia')->table('crons')->insert($data);
         }
     }
 
