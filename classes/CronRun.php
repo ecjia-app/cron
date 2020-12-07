@@ -46,7 +46,6 @@
 //
 namespace Ecjia\App\Cron;
 
-use RC_Logger;
 use RC_Cron;
 use ecjia_config;
 use Exception;
@@ -89,7 +88,7 @@ class CronRun
     {
         $message = $exception->getMessage();
         if (!empty($message)) {
-            RC_Logger::getLogger('cron')->error($message);
+            ecjia_log_error($message, [], 'cron');
         }
     }
 
@@ -112,10 +111,9 @@ class CronRun
 
         // Get security key from config
         $cronkeyConfig = ecjia_config::get('cron_secret_key', config('cron::config.cronKey'));
-
         // If no security key is set in the config, this route is disabled
-        if (!empty($cronkeyConfig)) {
-            RC_Logger::getLogger('cron')->error('Cron route call with no configured security key.');
+        if (empty($cronkeyConfig)) {
+            ecjia_log_error('Cron route call with no configured security key.', [], 'cron');
             abort(400, 'Cron route call with no configured security key.');
         }
 
@@ -132,12 +130,12 @@ class CronRun
                 Artisan::call('cron:run', array());
             } else {
                 // Configured security key is not equals the sent security key
-                RC_Logger::getLogger('cron')->error('Cron route call with wrong security key.');
+                ecjia_log_error('Cron route call with wrong security key.', [], 'cron');
                 abort(400, 'Cron route call with wrong security key.');
             }
         } else {
             // Validation not passed
-            RC_Logger::getLogger('cron')->error('Cron route call with missing or no alphanumeric security key.');
+            ecjia_log_error('Cron route call with missing or no alphanumeric security key.', [], 'cron');
             abort(400, 'Cron route call with missing or no alphanumeric security key.');
         }
     }
