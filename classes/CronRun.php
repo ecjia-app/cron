@@ -46,75 +46,23 @@
 //
 namespace Ecjia\App\Cron;
 
-use RC_Cron;
 use ecjia_config;
-use Exception;
-use InvalidArgumentException;
 use Artisan;
 use RC_Validator;
 use RC_Request;
 
 class CronRun
 {
-    private $plugin;
-
-    public function __construct()
+    public static function run()
     {
-        $this->plugin = new CronPlugin();
-    }
-
-
-    public function addCronJobs()
-    {
-        $list = $this->plugin->getEnableList();
-        collect($list)->each(function ($item) {
-            try {
-                if ($item['cron_expression']) {
-                    RC_Cron::add($item['cron_code'], $item['cron_expression'], function () use ($item) {
-                        return $this->runBy($item['cron_code']);
-                    });
-                }
-            } catch (InvalidArgumentException $e) {
-                $this->writeErrorLog($e);
-            }
-        });
-    }
-
-    /**
-     * 保存错误日志
-     * @param $error \ecjia_error
-     */
-    protected function writeErrorLog(Exception $exception)
-    {
-        $message = $exception->getMessage();
-        if (!empty($message)) {
-            ecjia_log_error($message, [], 'cron');
-        }
-    }
-
-    /**
-     * 运行计划指定任务
-     */
-    public function runBy($cron_code)
-    {
-        $handler = $this->plugin->channel($cron_code);
-        if (is_ecjia_error($handler)) {
-            return $handler->get_error_message();
-        }
-
-        return $handler->runHandle();
-    }
-
-    public function run()
-    {
-        $this->checkMethod();
+        self::checkMethod();
 
         // Get security key from config
         $cronkeyConfig = ecjia_config::get('cron_secret_key', config('cron::config.cronKey'));
         // If no security key is set in the config, this route is disabled
         if (empty($cronkeyConfig)) {
             ecjia_log_error('Cron route call with no configured security key.', [], 'cron');
-            abort(400, 'Cron route call with no configured security key.');
+            return new CronException('Cron route call with no configured security key.');
         }
 
         // Get security key from request
@@ -131,29 +79,49 @@ class CronRun
             } else {
                 // Configured security key is not equals the sent security key
                 ecjia_log_error('Cron route call with wrong security key.', [], 'cron');
-                abort(400, 'Cron route call with wrong security key.');
+                return new CronException('Cron route call with wrong security key.');
             }
         } else {
             // Validation not passed
             ecjia_log_error('Cron route call with missing or no alphanumeric security key.', [], 'cron');
-            abort(400, 'Cron route call with missing or no alphanumeric security key.');
+            return new CronException('Cron route call with missing or no alphanumeric security key.');
         }
+    }
+
+
+    /**
+     * 运行计划指定任务
+     * @param $cron_code
+     * @return string
+     */
+    public static function runBy($cron_code)
+    {
+        $plugin = new CronPlugin();
+        /**
+         * @var CronAbstract $handler
+         */
+        $handler = $plugin->channel($cron_code);
+        if (is_ecjia_error($handler)) {
+            return $handler->get_error_message();
+        }
+
+        return $handler->runHandle();
     }
 
     /**
      * 检查计划任务运行的模式，是否开启Web请求模式
      */
-    public function checkMethod()
+    public static function checkMethod()
     {
         if (!ecjia_config::get('cron_method')) {
-            abort(400, '禁止访问，未开启WEB调用计划任务功能！！！');
+            return new CronException('禁止访问，未开启WEB调用计划任务功能！！！');
         }
     }
 
     /**
      * 生成用于保护内置Cron运行路由的密钥
      */
-    public function keygen()
+    public static function keygen()
     {
         return rc_random(32, 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789');
     }
