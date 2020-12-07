@@ -99,7 +99,7 @@ class AdminConfigController extends AdminBase
 	    $this->assign('cron_secret_key', ecjia::config('cron_secret_key'));
 
 		$this->assign('form_action', RC_Uri::url('cron/admin_config/update'));
-		$this->assign('cron_url', RC_Uri::site_url().'/?key='.ecjia::config('cron_secret_key'));
+		$this->assign('cron_url', RC_Uri::home_url().'/sites/cron/?key='.ecjia::config('cron_secret_key'));
 		
 		$this->assign('current_code', 'cron');
         return $this->display('cron_config.dwt');
