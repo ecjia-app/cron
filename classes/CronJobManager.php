@@ -49,13 +49,27 @@ class CronJobManager
     {
         try {
             if ($item['cron_expression']) {
-                RC_Cron::add($item['cron_code'], $item['cron_expression'], function () use ($item) {
-                    return $this->runBy($item['cron_code']);
+                $cron_expression = $this->fixCronExpression($item['cron_expression']);
+                RC_Cron::add($item['cron_code'], $cron_expression, function () use ($item) {
+                    return CronRun::runBy($item['cron_code']);
                 });
             }
         } catch (\Exception $e) {
             $this->writeErrorLog($e);
         }
+    }
+
+    /**
+     * @param $expression
+     */
+    private function fixCronExpression($expression)
+    {
+        $express = explode(' ', $expression);
+        if (count($express) == 6) {
+            unset($express[5]);
+            return implode(' ', $express);
+        }
+        return $expression;
     }
 
     /**

@@ -53,6 +53,10 @@ use RC_Request;
 
 class CronRun
 {
+
+    /**
+     * @throws CronException
+     */
     public static function run()
     {
         self::checkMethod();
@@ -62,7 +66,7 @@ class CronRun
         // If no security key is set in the config, this route is disabled
         if (empty($cronkeyConfig)) {
             ecjia_log_error('Cron route call with no configured security key.', [], 'cron');
-            return new CronException('Cron route call with no configured security key.');
+            throw new CronException('Cron route call with no configured security key.');
         }
 
         // Get security key from request
@@ -79,12 +83,12 @@ class CronRun
             } else {
                 // Configured security key is not equals the sent security key
                 ecjia_log_error('Cron route call with wrong security key.', [], 'cron');
-                return new CronException('Cron route call with wrong security key.');
+                throw new CronException('Cron route call with wrong security key.');
             }
         } else {
             // Validation not passed
             ecjia_log_error('Cron route call with missing or no alphanumeric security key.', [], 'cron');
-            return new CronException('Cron route call with missing or no alphanumeric security key.');
+            throw new CronException('Cron route call with missing or no alphanumeric security key.');
         }
     }
 
