@@ -49,6 +49,7 @@ namespace Ecjia\App\Cron\Controllers;
 use admin_nav_here;
 use admin_notice;
 use ecjia;
+use Ecjia\App\Cron\CronRun;
 use Ecjia\App\Cron\Installer\PluginUninstaller;
 use Ecjia\Component\Plugin\Storages\CronPluginStorage;
 use Ecjia\System\Frameworks\BrowserEvent\SwitchClickEvent;
@@ -423,7 +424,7 @@ class AdminPluginController extends AdminBase
                 return $this->showmessage('Cron script not found.', ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
             }
 
-            $result = with(new \Ecjia\App\Cron\CronRun)->runBy($code);
+            $result = CronRun::runBy($code);
             if (is_ecjia_error($result)) {
                 return $this->showmessage($result->get_error_message(), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
             }
@@ -438,6 +439,8 @@ class AdminPluginController extends AdminBase
 
     /**
      * 获取即将执行该任务的前5条时间记录
+     * @param $cron_expression
+     * @return array
      */
     private function five_list($cron_expression)
     {

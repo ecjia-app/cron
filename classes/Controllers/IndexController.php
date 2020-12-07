@@ -13,7 +13,7 @@ class IndexController extends BasicController
     public function init()
     {
         try {
-            (new CronRun())->run();
+            CronRun::run();
             return response('ECJia cron job running...');
         } catch (\Exception $exception) {
             return response($exception->getMessage(), 500);
