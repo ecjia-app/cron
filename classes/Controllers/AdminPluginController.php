@@ -49,7 +49,10 @@ namespace Ecjia\App\Cron\Controllers;
 use admin_nav_here;
 use admin_notice;
 use ecjia;
+use Ecjia\App\Cron\CronExpression;
+use Ecjia\App\Cron\CronPlugin;
 use Ecjia\App\Cron\CronRun;
+use Ecjia\App\Cron\Helper;
 use Ecjia\App\Cron\Installer\PluginUninstaller;
 use Ecjia\Component\Plugin\Storages\CronPluginStorage;
 use Ecjia\System\Frameworks\BrowserEvent\SwitchClickEvent;
@@ -188,11 +191,11 @@ class AdminPluginController extends AdminBase
                         $code_list[$value['name']] = $value['value'];
                     }
                 }
-                $cron_handle         = with(new \Ecjia\App\Cron\CronPlugin)->channel($code);
+                $cron_handle         = with(new CronPlugin)->channel($code);
                 $cron_config = $cron_handle->makeFormData($code_list);
                 $cron_config_file    = $cron_handle->loadConfig();
                 //获取配置时间
-                $config_list = with(new \Ecjia\App\Cron\CronExpression)->getExpressions();
+                $config_list = with(new CronExpression)->getExpressions();
             }
             catch (\InvalidArgumentException $exception) {
                 $gourl = RC_Uri::url("cron/admin_plugin/delete", [
@@ -225,7 +228,7 @@ class AdminPluginController extends AdminBase
     {
         try {
             $expression = $_POST['config_time'];
-            $law        = with(new \Ecjia\App\Cron\CronExpression)->getExpressionVaule($expression);
+            $law        = with(new CronExpression)->getExpressionVaule($expression);
 
             return $this->showmessage('', ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_SUCCESS, array('content' => $law));
         } catch (\Exception $exception) {
@@ -304,7 +307,7 @@ class AdminPluginController extends AdminBase
                 } else {
                     $date = $times[0];
                 }
-                $nexttime = Ecjia\App\Cron\Helper::getNextRunTime($cron_expression);
+                $nexttime = Helper::getNextRunTime($cron_expression);
             } else {
                 return $this->showmessage(__('请配置执行时间', 'cron'), ecjia::MSGTYPE_JSON | ecjia::MSGSTAT_ERROR);
             }
@@ -444,7 +447,7 @@ class AdminPluginController extends AdminBase
      */
     private function five_list($cron_expression)
     {
-        $file_list = with(new \Ecjia\App\Cron\CronExpression)->getProvidesMultipleRunDates($cron_expression);
+        $file_list = with(new CronExpression)->getProvidesMultipleRunDates($cron_expression);
         $dates     = collect($file_list)->map(function ($item) {
             return $item->format('Y-m-d H:i:s');
         })->toArray();
