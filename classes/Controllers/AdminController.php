@@ -44,35 +44,71 @@
 //
 //  ---------------------------------------------------------------------------------
 //
-namespace Ecjia\App\Cron\Services;
+namespace Ecjia\App\Cron\Controllers;
 
-use ecjia_admin;
-use RC_Uri;
+use admin_nav_here;
+use ecjia_page;
+use ecjia_screen;
+use RC_DB;
+use RC_Script;
+use RC_Style;
 
 /**
- * 后台菜单API
- * @author royalwang
+ * 计划任务错误日志
+ * @author zrl
  */
-class CronAdminMenuService
+class AdminController extends AdminBase
 {
-    /**
-     * @param $options
-     * @return mixed
-     */
-	public function handle(& $options)
+
+	public function __construct()
     {
-        $menus = ecjia_admin::make_admin_menu('03_content', __('计划任务'), '', 103);
+		parent::__construct();
 
-        $submenus = array(
-            ecjia_admin::make_admin_menu('31_cron_list', __('任务列表', 'cron'), RC_Uri::url('cron/admin_plugin/init'), 31)->add_purview('cron_manage'),
-            ecjia_admin::make_admin_menu('32_cron_config', __('任务配置', 'cron'), RC_Uri::url('cron/admin_config/init'), 32)->add_purview('cron_manage'),
-            ecjia_admin::make_admin_menu('33_cron_log', __('任务日志', 'cron'), RC_Uri::url('cron/admin/init'), 33)->add_purview('cron_log'),
-        );
+		RC_Script::enqueue_script('jquery-validate');
+		RC_Script::enqueue_script('jquery-form');
+		RC_Script::enqueue_script('smoke');
+		RC_Style::enqueue_style('chosen');
+		RC_Style::enqueue_style('uniform-aristo');
+		RC_Script::enqueue_script('jquery-uniform');
+		RC_Script::enqueue_script('jquery-chosen');
+    }
 
-        $menus->add_submenu($submenus);
+	/**
+	 * 计划任务日志
+	 */
+	public function init()
+    {
+	    $this->admin_priv('cron_log');
 
-        return $menus;
+		ecjia_screen::get_current_screen()->add_nav_here(new admin_nav_here(__('计划任务日志', 'cron')));
+		$this->assign('ur_here', __('计划任务日志', 'cron'));
+
+		$data = $this->get_cron_job();
+        $this->assign('data', $data);
+
+        return $this->display('cron_log.dwt');
 	}
+
+    /**
+     * 计划任务日志
+     * @return array
+     */
+	private function get_cron_job()
+    {
+        $db = RC_DB::connection(config('cashier.database_connection', 'default'))->table('cron_job');
+
+        $count = $db->count();
+
+        $page_row = new ecjia_page($count, 15, 5);
+
+        $result = $db
+            ->orderBy('id', 'desc')
+            ->take(15)
+            ->skip($page_row->start_id - 1)
+            ->get();
+
+        return array('list' => $result, 'page' => $page_row->show(5), 'desc' => $page_row->page_desc());
+    }
 }
 
-// end
+//end
