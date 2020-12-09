@@ -77,13 +77,18 @@
 		<p>{t domain="cron"}对于上述示例，此地址可以是{/t}</p>
 		<p><strong>http://exampledomain.com/sites/cron/?key=1PBgabAXdoLTy3JDyi0xRpTR2qNrkkQy</strong>{t domain="cron"}，并且运行间隔必须是每分钟。{/t}</p>
 		<p>{t domain="cron"}方式一：Linux服务器上运行，可以使用crontab计划任务执行。{/t}<p>
-		<div class="api_secret_cron">
+		<div class="api_secret_cron" style="height:50px;">
 			<p>* * * * * wget  -t 1 -T 0 -q --spider {$cron_url}<p>
 		</div>
-		<p style="margin-top: 10px;">{t domain="cron"}方式二：在线cronjob服务器，可以配置地址和运行时间间隔。{/t}</p>
+		<p style="margin-top: 10px;">{t domain="cron"}方式二：Linux服务器上运行，可以使用crontab计划任务执行。{/t}</p>
+        <p>{t domain="cron"}注：path 换成你网站的根路径{/t}</p>
 		<div class="api_secret_cron" style="height:50px;">
-			<p>{$cron_url}<p>
+            <p>*/1 * * * * /path/ecjia cron:run<p>
 		</div>
+        <p style="margin-top: 10px;">{t domain="cron"}方式三：在线cronjob服务器，可以配置地址和运行时间间隔。{/t}</p>
+        <div class="api_secret_cron" style="height:50px;">
+            <p>{$cron_url}<p>
+        </div>
 	</div>
 </div>
 <!-- {/block} -->
