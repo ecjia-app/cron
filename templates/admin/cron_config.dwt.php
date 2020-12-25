@@ -7,6 +7,7 @@
 </script>
 <!-- {/block} -->
 
+{*
 <!-- {block name="admin_shop_config_nav"} -->
 <div class="setting-group">
     <span class="setting-group-title"><i class="fontello-icon-cog"></i>设置</span>
@@ -16,6 +17,7 @@
     </ul>
 </div>
 <!-- {/block} -->
+*}
 
 <!-- {block name="admin_config_form"} -->
 <div class="row-fluid">
