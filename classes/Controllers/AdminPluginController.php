@@ -127,7 +127,7 @@ class AdminPluginController extends AdminBase
             } else {
                 $db_cron->where('enabled', 1);
             }
-            $data              = $db_cron->get();
+            $data              = $db_cron->get()->toArray();
             $filter_count      = RC_DB::connection('ecjia')->table('crons')->select(RC_DB::raw('SUM(IF(enabled = 1, 1, 0)) as enabled'), RC_DB::raw('SUM(IF(enabled =0 , 1, 0)) as disabled'))->first();
             $count['enabled']  = $filter_count['enabled'] > 0 ? $filter_count['enabled'] : 0;
             $count['disabled'] = $filter_count['disabled'] > 0 ? $filter_count['disabled'] : 0;

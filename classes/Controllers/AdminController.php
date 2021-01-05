@@ -105,7 +105,7 @@ class AdminController extends AdminBase
             ->orderBy('id', 'desc')
             ->take(15)
             ->skip($page_row->start_id - 1)
-            ->get();
+            ->get()->toArray();
 
         return array('list' => $result, 'page' => $page_row->show(5), 'desc' => $page_row->page_desc());
     }
