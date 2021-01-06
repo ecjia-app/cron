@@ -1,7 +1,7 @@
 {
-    "name": "ecjia/app-cron",
+    "name": "ecjia-app/cron",
     "description": "The ECJia App Cron package.",
-    "type": "library",
+    "type": "royalcms-app",
     "license": "MIT",
     "homepage": "https://github.com/ecjia",
     "authors": [
