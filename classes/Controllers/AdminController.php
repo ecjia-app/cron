@@ -95,7 +95,7 @@ class AdminController extends AdminBase
      */
 	private function get_cron_job()
     {
-        $db = RC_DB::connection(config('cashier.database_connection', 'default'))->table('cron_job');
+        $db = RC_DB::connection(config('ecjia.database_connection', 'default'))->table('cron_job');
 
         $count = $db->count();
 
